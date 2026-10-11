@@ -6,6 +6,7 @@ databases:
 services:
   - type: web
     name: fintwin-api
+    plan: free
     runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: alembic upgrade head && uvicorn backend.main:app --host 0.0.0.0 --port $PORT
@@ -26,6 +27,7 @@ services:
 
   - type: web
     name: fintwin-frontend
+    plan: free
     runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: streamlit run frontend/app.py --server.address 0.0.0.0 --server.port $PORT
