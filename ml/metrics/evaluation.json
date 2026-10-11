@@ -1,0 +1,160 @@
+{
+  "dataset": "financial_risk_dataset.csv",
+  "rows_used": 20000,
+  "feature_columns": [
+    "age",
+    "employment_type",
+    "employment_years",
+    "monthly_income",
+    "monthly_expenses",
+    "monthly_emi",
+    "monthly_savings",
+    "total_savings",
+    "emergency_fund",
+    "investments",
+    "total_debt",
+    "dependents",
+    "insurance",
+    "health_insurance",
+    "income_stability_score",
+    "financial_goal",
+    "investment_experience",
+    "expected_salary_growth_pct",
+    "expected_expense_inflation_pct",
+    "planned_major_expense",
+    "planned_expense_month"
+  ],
+  "excluded_columns": [
+    "customer_id",
+    "risk_score",
+    "recommended_intervention",
+    "savings_rate_pct",
+    "debt_to_income_pct",
+    "emergency_fund_months",
+    "financial_risk"
+  ],
+  "target_distribution": {
+    "Medium": 6800,
+    "High": 6600,
+    "Low": 6600
+  },
+  "test_size": 0.2,
+  "random_state": 42,
+  "selection_metric": "macro_f1",
+  "best_model": "logistic_regression",
+  "models": {
+    "logistic_regression": {
+      "accuracy": 0.8655,
+      "macro_f1": 0.8666124773758096,
+      "classification_report": {
+        "High": {
+          "precision": 0.9137404580152672,
+          "recall": 0.9068181818181819,
+          "f1-score": 0.9102661596958175,
+          "support": 1320.0
+        },
+        "Low": {
+          "precision": 0.8970358814352574,
+          "recall": 0.8712121212121212,
+          "f1-score": 0.883935434281322,
+          "support": 1320.0
+        },
+        "Medium": {
+          "precision": 0.7919034090909091,
+          "recall": 0.8198529411764706,
+          "f1-score": 0.805635838150289,
+          "support": 1360.0
+        },
+        "accuracy": 0.8655,
+        "macro avg": {
+          "precision": 0.8675599161804778,
+          "recall": 0.8659610814022578,
+          "f1-score": 0.8666124773758096,
+          "support": 4000.0
+        },
+        "weighted avg": {
+          "precision": 0.8668033511095821,
+          "recall": 0.8655,
+          "f1-score": 0.8660027109835544,
+          "support": 4000.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          1197,
+          0,
+          123
+        ],
+        [
+          0,
+          1150,
+          170
+        ],
+        [
+          113,
+          132,
+          1115
+        ]
+      ]
+    },
+    "random_forest": {
+      "accuracy": 0.82525,
+      "macro_f1": 0.8267297237487456,
+      "classification_report": {
+        "High": {
+          "precision": 0.8932496075353218,
+          "recall": 0.8621212121212121,
+          "f1-score": 0.8774094063222821,
+          "support": 1320.0
+        },
+        "Low": {
+          "precision": 0.8524962178517398,
+          "recall": 0.8537878787878788,
+          "f1-score": 0.8531415594246783,
+          "support": 1320.0
+        },
+        "Medium": {
+          "precision": 0.7378917378917379,
+          "recall": 0.7617647058823529,
+          "f1-score": 0.7496382054992764,
+          "support": 1360.0
+        },
+        "accuracy": 0.82525,
+        "macro avg": {
+          "precision": 0.8278791877595998,
+          "recall": 0.8258912655971479,
+          "f1-score": 0.8267297237487456,
+          "support": 4000.0
+        },
+        "weighted avg": {
+          "precision": 0.8269793132609212,
+          "recall": 0.82525,
+          "f1-score": 0.8259588085662509,
+          "support": 4000.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          1138,
+          7,
+          175
+        ],
+        [
+          0,
+          1127,
+          193
+        ],
+        [
+          136,
+          188,
+          1036
+        ]
+      ]
+    }
+  },
+  "limitations": [
+    "The target labels are synthetic.",
+    "Held-out performance does not establish real-world predictive validity.",
+    "Audit the label-generation rules and feature availability before deployment."
+  ]
+}

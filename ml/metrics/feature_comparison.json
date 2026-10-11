@@ -1,0 +1,229 @@
+{
+  "dataset": "financial_risk_dataset.csv",
+  "rows_used": 20000,
+  "train_rows": 16000,
+  "test_rows": 4000,
+  "random_state": 42,
+  "test_size": 0.2,
+  "target_distribution": {
+    "Medium": 6800,
+    "High": 6600,
+    "Low": 6600
+  },
+  "experiments": {
+    "risk_score_only_diagnostic": {
+      "accuracy": 0.81075,
+      "balanced_accuracy": 0.8115790255496137,
+      "macro_f1": 0.8119469807610232,
+      "classification_report": {
+        "High": {
+          "precision": 0.8665141113653699,
+          "recall": 0.8606060606060606,
+          "f1-score": 0.863549980995819,
+          "support": 1320.0
+        },
+        "Low": {
+          "precision": 0.8519083969465648,
+          "recall": 0.8454545454545455,
+          "f1-score": 0.8486692015209125,
+          "support": 1320.0
+        },
+        "Medium": {
+          "precision": 0.7186366932559826,
+          "recall": 0.7286764705882353,
+          "f1-score": 0.723621759766338,
+          "support": 1360.0
+        },
+        "accuracy": 0.81075,
+        "macro avg": {
+          "precision": 0.8123530671893057,
+          "recall": 0.8115790255496137,
+          "f1-score": 0.8119469807610232,
+          "support": 4000.0
+        },
+        "weighted avg": {
+          "precision": 0.8114159034499726,
+          "recall": 0.81075,
+          "f1-score": 0.8110637285510763,
+          "support": 4000.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          1136,
+          0,
+          184
+        ],
+        [
+          0,
+          1116,
+          204
+        ],
+        [
+          175,
+          194,
+          991
+        ]
+      ],
+      "features": [
+        "risk_score"
+      ],
+      "diagnostic_only": true
+    },
+    "core_financial_features": {
+      "accuracy": 0.866,
+      "balanced_accuracy": 0.8664067142008318,
+      "macro_f1": 0.8672742868576436,
+      "classification_report": {
+        "High": {
+          "precision": 0.9182098765432098,
+          "recall": 0.9015151515151515,
+          "f1-score": 0.9097859327217125,
+          "support": 1320.0
+        },
+        "Low": {
+          "precision": 0.8978159126365055,
+          "recall": 0.871969696969697,
+          "f1-score": 0.8847040737893928,
+          "support": 1320.0
+        },
+        "Medium": {
+          "precision": 0.789732770745429,
+          "recall": 0.825735294117647,
+          "f1-score": 0.807332854061826,
+          "support": 1360.0
+        },
+        "accuracy": 0.866,
+        "macro avg": {
+          "precision": 0.8685861866417147,
+          "recall": 0.8664067142008318,
+          "f1-score": 0.8672742868576436,
+          "support": 4000.0
+        },
+        "weighted avg": {
+          "precision": 0.8677976524827519,
+          "recall": 0.866,
+          "f1-score": 0.8666748725296856,
+          "support": 4000.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          1190,
+          0,
+          130
+        ],
+        [
+          0,
+          1151,
+          169
+        ],
+        [
+          106,
+          131,
+          1123
+        ]
+      ],
+      "features": [
+        "age",
+        "monthly_income",
+        "monthly_expenses",
+        "monthly_emi",
+        "monthly_savings",
+        "total_savings",
+        "emergency_fund",
+        "investments",
+        "total_debt",
+        "dependents",
+        "income_stability_score"
+      ],
+      "diagnostic_only": false
+    },
+    "full_feature_model": {
+      "accuracy": 0.8655,
+      "balanced_accuracy": 0.8659610814022578,
+      "macro_f1": 0.8666124773758096,
+      "classification_report": {
+        "High": {
+          "precision": 0.9137404580152672,
+          "recall": 0.9068181818181819,
+          "f1-score": 0.9102661596958175,
+          "support": 1320.0
+        },
+        "Low": {
+          "precision": 0.8970358814352574,
+          "recall": 0.8712121212121212,
+          "f1-score": 0.883935434281322,
+          "support": 1320.0
+        },
+        "Medium": {
+          "precision": 0.7919034090909091,
+          "recall": 0.8198529411764706,
+          "f1-score": 0.805635838150289,
+          "support": 1360.0
+        },
+        "accuracy": 0.8655,
+        "macro avg": {
+          "precision": 0.8675599161804778,
+          "recall": 0.8659610814022578,
+          "f1-score": 0.8666124773758096,
+          "support": 4000.0
+        },
+        "weighted avg": {
+          "precision": 0.8668033511095821,
+          "recall": 0.8655,
+          "f1-score": 0.8660027109835544,
+          "support": 4000.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          1197,
+          0,
+          123
+        ],
+        [
+          0,
+          1150,
+          170
+        ],
+        [
+          113,
+          132,
+          1115
+        ]
+      ],
+      "features": [
+        "age",
+        "employment_type",
+        "employment_years",
+        "monthly_income",
+        "monthly_expenses",
+        "monthly_emi",
+        "monthly_savings",
+        "total_savings",
+        "emergency_fund",
+        "investments",
+        "total_debt",
+        "dependents",
+        "insurance",
+        "health_insurance",
+        "income_stability_score",
+        "financial_goal",
+        "investment_experience",
+        "expected_salary_growth_pct",
+        "expected_expense_inflation_pct",
+        "planned_major_expense",
+        "planned_expense_month"
+      ],
+      "diagnostic_only": false
+    }
+  },
+  "interpretation_notes": [
+    "All experiments use the same stratified train/test split.",
+    "The risk-score-only experiment is diagnostic, not deployable.",
+    "All metrics measure prediction of synthetic labels.",
+    "Feature comparisons do not establish real-world validity.",
+    "Core and full feature models use the same LogisticRegression setup."
+  ]
+}

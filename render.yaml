@@ -1,0 +1,39 @@
+databases:
+  - name: fintwin-db
+    databaseName: fintwin
+    user: fintwin_user
+    plan: free
+services:
+  - type: web
+    name: fintwin-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fintwin-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
+
+  - type: web
+    name: fintwin-frontend
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run frontend/app.py --server.address 0.0.0.0 --server.port $PORT
+    envVars:
+      - key: FINTWIN_API_URL
+        fromService:
+          type: web
+          name: fintwin-api
+          property: url
+        # Configure this value in Render as the API's public HTTPS URL.
+
