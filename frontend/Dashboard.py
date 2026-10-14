@@ -26,63 +26,105 @@ if "access_token" not in st.session_state:
 
 
 # --------------------------------------------------
-# Login
+# Login and Registration
 # --------------------------------------------------
 
 def login_form():
-    st.title("💹 FinTwin")
-    st.subheader("Sign in to your financial dashboard")
+    st.title("FinTwin")
+    st.subheader("Your personal financial simulator")
 
-    with st.form("login_form"):
-        email = st.text_input("Email address")
-        password = st.text_input(
-            "Password",
-            type="password",
-        )
+    login_tab, register_tab = st.tabs(["Log in", "Create account"])
 
-        submitted = st.form_submit_button(
-            "Log in",
-            type="primary",
-            use_container_width=True,
-        )
-
-    if submitted:
-        if not email.strip() or not password:
-            st.warning("Enter your email and password.")
-            return
-
-        try:
-            response = requests.post(
-                f"{API_BASE_URL}/auth/login",
-                data={
-                    "username": email.strip(),
-                    "password": password,
-                },
-                timeout=10,
+    with login_tab:
+        with st.form("login_form"):
+            email = st.text_input("Email address", key="login_email")
+            password = st.text_input(
+                "Password", type="password", key="login_password"
+            )
+            submitted = st.form_submit_button(
+                "Log in", type="primary", use_container_width=True
             )
 
-            if response.status_code == 200:
-                st.session_state.access_token = response.json()[
-                    "access_token"
-                ]
-                st.rerun()
-
-            elif response.status_code == 401:
-                st.error("Incorrect email or password.")
-
-            elif response.status_code == 403:
-                st.error("Your account is inactive.")
-
+        if submitted:
+            if not email.strip() or not password:
+                st.warning("Enter your email and password.")
             else:
-                st.error(
-                    f"Login failed: HTTP {response.status_code}."
-                )
+                try:
+                    response = requests.post(
+                        f"{API_BASE_URL}/auth/login",
+                        data={
+                            "username": email.strip(),
+                            "password": password,
+                        },
+                        timeout=10,
+                    )
+                    if response.status_code == 200:
+                        st.session_state.access_token = response.json()["access_token"]
+                        st.rerun()
+                    elif response.status_code == 401:
+                        st.error("Incorrect email or password.")
+                    elif response.status_code == 403:
+                        st.error("Your account is inactive.")
+                    else:
+                        st.error(f"Login failed: HTTP {response.status_code}.")
+                except requests.RequestException:
+                    st.error(
+                        "Cannot connect to FinTwin API. Check that FastAPI is running."
+                    )
 
-        except requests.RequestException:
-            st.error(
-                "Cannot connect to FinTwin API. "
-                "Check that FastAPI is running."
+    with register_tab:
+        st.subheader("Create your FinTwin account")
+        with st.form("register_form"):
+            reg_email = st.text_input("Email address", key="register_email")
+            reg_password = st.text_input(
+                "Password (minimum 8 characters)",
+                type="password",
+                key="register_password",
             )
+            confirm_password = st.text_input(
+                "Confirm password",
+                type="password",
+                key="register_confirm_password",
+            )
+            register_submitted = st.form_submit_button(
+                "Create account", type="primary", use_container_width=True
+            )
+
+        if register_submitted:
+            if not reg_email.strip() or not reg_password:
+                st.warning("Enter an email address and password.")
+            elif len(reg_password) < 8:
+                st.warning("Password must contain at least 8 characters.")
+            elif len(reg_password) > 128:
+                st.warning("Password cannot exceed 128 characters.")
+            elif reg_password != confirm_password:
+                st.error("Passwords do not match.")
+            else:
+                try:
+                    response = requests.post(
+                        f"{API_BASE_URL}/auth/register",
+                        json={
+                            "email": reg_email.strip(),
+                            "password": reg_password,
+                        },
+                        timeout=10,
+                    )
+                    if response.status_code == 201:
+                        st.success("Account created! Open the Log in tab to sign in.")
+                    elif response.status_code == 409:
+                        st.error("An account with this email already exists.")
+                    elif response.status_code == 422:
+                        st.error(
+                            "Invalid email or registration details. Check your email address."
+                        )
+                    else:
+                        st.error(
+                            f"Registration failed: HTTP {response.status_code}."
+                        )
+                except requests.RequestException:
+                    st.error(
+                        "Cannot connect to FinTwin API. Check that FastAPI is running."
+                    )
 
 
 # --------------------------------------------------
@@ -127,24 +169,29 @@ def show_financial_alerts(health_data: dict):
     # Emergency fund warning
     if emergency_months is None:
         st.info(
-            "Emergency fund coverage cannot be calculated "
-            "because monthly expenses and EMI are both zero."
+            "Emergency-fund runway is unavailable: "
+            + (
+                "the emergency-fund balance is not reported."
+                if health_data.get("emergency_fund_coverage_status")
+                == "missing_emergency_fund"
+                else "reported non-EMI expenses and EMI are both zero."
+            )
         )
 
     elif emergency_months < 3:
         st.warning(
             f"Your emergency fund covers "
             f"{emergency_months:.2f} months of outgoings. "
-            "A common planning target is 3–6 months of "
-            "essential expenses."
+            "This runway includes all reported expenses and EMI; "
+            "it is not essential-expense coverage."
         )
 
     elif emergency_months < 6:
         st.info(
             f"Your emergency fund covers "
             f"{emergency_months:.2f} months of outgoings. "
-            "Consider whether building a larger reserve "
-            "would suit your circumstances."
+            "This runway includes all reported expenses and EMI. "
+            "Consider your essential costs and circumstances separately."
         )
 
     else:
@@ -257,14 +304,31 @@ expenses = float(data.get("monthly_expenses") or 0)
 emi = float(data.get("monthly_emi") or 0)
 cash_flow = float(data.get("monthly_cash_flow") or 0)
 
-savings_rate = data.get("savings_rate_percent")
-debt_to_income = data.get("debt_to_income_percent")
+savings_rate = data.get("cash_flow_surplus_rate_percent")
+actual_savings_rate = data.get("actual_savings_rate_percent")
+debt_to_income = data.get("emi_to_income_percent")
 emergency_months = data.get("emergency_fund_months")
 
-total_savings = float(data.get("total_savings") or 0)
-investments = float(data.get("investments") or 0)
-emergency_fund = float(data.get("emergency_fund") or 0)
-total_debt = float(data.get("total_debt") or 0)
+total_savings = (
+    float(data["reported_total_savings"])
+    if data.get("reported_total_savings") is not None
+    else None
+)
+investments = (
+    float(data["reported_investments"])
+    if data.get("reported_investments") is not None
+    else None
+)
+emergency_fund = (
+    float(data["reported_emergency_fund"])
+    if data.get("reported_emergency_fund") is not None
+    else None
+)
+total_debt = (
+    float(data["reported_total_debt"])
+    if data.get("reported_total_debt") is not None
+    else None
+)
 
 
 # --------------------------------------------------
@@ -335,6 +399,13 @@ try:
                 "by the baseline rules."
             )
 
+    unassessed = risk_data.get("unassessed_factors", [])
+    if unassessed:
+        st.info(
+            "Not assessed because information is missing or undefined: "
+            + ", ".join(unassessed)
+        )
+
     st.caption(
         risk_data.get("disclaimer", "")
     )
@@ -355,12 +426,12 @@ st.subheader("Monthly Overview")
 c1, c2, c3, c4 = st.columns(4)
 
 c1.metric(
-    "Monthly Income",
+    "Monthly Take-Home Income",
     f"₹{income:,.0f}",
 )
 
 c2.metric(
-    "Monthly Expenses",
+    "Monthly Expenses (Excluding EMI)",
     f"₹{expenses:,.0f}",
 )
 
@@ -381,10 +452,10 @@ c4.metric(
 
 st.subheader("Financial Indicators")
 
-c1, c2, c3 = st.columns(3)
+c1, c2, c3, c4 = st.columns(4)
 
 c1.metric(
-    "Cash-Flow Rate",
+    "Cash-Flow Surplus Rate",
     (
         f"{float(savings_rate):.2f}%"
         if savings_rate is not None
@@ -393,7 +464,20 @@ c1.metric(
 )
 
 c2.metric(
-    "EMI / Income",
+    "Reported Actual Savings Rate",
+    (
+        f"{float(actual_savings_rate):.2f}%"
+        if actual_savings_rate is not None
+        else (
+            "Not defined"
+            if data.get("actual_savings_rate_status") == "zero_income"
+            else "Not reported"
+        )
+    ),
+)
+
+c3.metric(
+    "EMI / Take-Home Income",
     (
         f"{float(debt_to_income):.2f}%"
         if debt_to_income is not None
@@ -401,8 +485,8 @@ c2.metric(
     ),
 )
 
-c3.metric(
-    "Emergency Fund Coverage",
+c4.metric(
+    "Emergency-Fund Runway",
     (
         f"{float(emergency_months):.2f} months"
         if emergency_months is not None
@@ -411,10 +495,10 @@ c3.metric(
 )
 
 st.caption(
-    "Cash-flow rate is calculated as "
-    "(income − expenses − EMI) ÷ income. "
-    "It may differ from the monthly savings rate "
-    "you report in your financial profile."
+    "Cash-flow surplus rate = (take-home income − non-EMI expenses − EMI) "
+    "÷ take-home income. Actual savings rate uses the monthly savings "
+    "amount you reported. Emergency-fund runway uses all reported "
+    "non-EMI expenses plus EMI; it is not essential-expense coverage."
 )
 
 
@@ -468,7 +552,7 @@ with right:
     fig = go.Figure(
         go.Bar(
             x=[
-                "Total Savings",
+                "Liquid Savings",
                 "Investments",
                 "Emergency Fund",
             ],
@@ -478,9 +562,9 @@ with right:
                 emergency_fund,
             ],
             text=[
-                f"₹{total_savings:,.0f}",
-                f"₹{investments:,.0f}",
-                f"₹{emergency_fund:,.0f}",
+                f"₹{total_savings:,.0f}" if total_savings is not None else "Not reported",
+                f"₹{investments:,.0f}" if investments is not None else "Not reported",
+                f"₹{emergency_fund:,.0f}" if emergency_fund is not None else "Not reported",
             ],
             textposition="auto",
         )
@@ -498,9 +582,9 @@ with right:
 
     st.caption(
         "These balances are displayed separately for comparison. "
-        "Emergency funds or investments may already be included "
-        "in total savings; do not add them together unless "
-        "you have confirmed they represent separate amounts."
+        "Liquid savings includes the emergency-fund amount. Investments "
+        "are reported separately and are excluded from liquid savings. "
+        "Do not add the emergency fund to liquid savings again."
     )
 
 
@@ -517,21 +601,37 @@ show_financial_alerts(data)
 
 st.subheader("Financial Summary")
 
-c1, c2, c3 = st.columns(3)
+c1, c2, c3, c4 = st.columns(4)
 
 c1.metric(
-    "Total Savings",
-    f"₹{total_savings:,.0f}",
+    "Liquid Savings (Including Emergency Fund)",
+    f"₹{total_savings:,.0f}" if total_savings is not None else "Not reported",
 )
 
 c2.metric(
     "Investments",
-    f"₹{investments:,.0f}",
+    f"₹{investments:,.0f}" if investments is not None else "Not reported",
 )
 
 c3.metric(
     "Total Debt",
-    f"₹{total_debt:,.0f}",
+    f"₹{total_debt:,.0f}" if total_debt is not None else "Not reported",
+)
+
+tracked_net_worth = data.get("tracked_net_worth")
+c4.metric(
+    "Tracked Net Worth (Partial)",
+    (
+        f"₹{float(tracked_net_worth):,.0f}"
+        if tracked_net_worth is not None
+        else "Not available"
+    ),
+)
+st.caption(
+    "Tracked net worth = liquid savings + separately reported investments "
+    "− outstanding debt. Emergency funds are already included in liquid "
+    "savings. This partial figure excludes property and other assets, plus "
+    "non-debt liabilities; it is not complete household net worth."
 )
 
 

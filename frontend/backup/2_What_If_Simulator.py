@@ -133,7 +133,11 @@ if result:
 
     c3.metric(
         "Emergency fund after upfront cost",
-        f"₹{result['scenario_emergency_fund']:,.0f}",
+        (
+            f"₹{result['scenario_emergency_fund']:,.0f}"
+            if result.get("scenario_emergency_fund") is not None
+            else "Not reported"
+        ),
     )
 
     left, right = st.columns(2)
@@ -172,7 +176,10 @@ if result:
 
         if months is None:
             st.metric("Coverage", "N/A")
-            st.caption("Monthly outflow is zero, so coverage is undefined.")
+            if not result.get("emergency_fund_reported", False):
+                st.caption("Coverage is unavailable because the emergency-fund balance is not reported.")
+            else:
+                st.caption("Monthly outflow is zero, so coverage is undefined.")
         else:
             st.metric("Scenario coverage", f"{months:.2f} months")
             st.caption(
@@ -182,7 +189,7 @@ if result:
 
     if result["scenario_has_insufficient_upfront_funds"]:
         st.error(
-            "The upfront cost exceeds your recorded emergency fund. "
+            "The upfront cost cannot be fully covered by the confirmed emergency-fund balance. "
             "The calculation shows a shortfall; it does not assume you "
             "will borrow or withdraw additional funds."
         )

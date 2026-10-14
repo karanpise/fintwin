@@ -64,6 +64,11 @@ def optional_number(field):
     return None if value is None else float(value)
 
 
+def balance_status(field):
+    # Old stored amounts are intentionally not assumed to be confirmed.
+    return bool(profile.get(f"{field}_reported", False))
+
+
 def select_index(options, field):
     current = profile.get(field)
     return options.index(current) if current in options else 0
@@ -101,27 +106,42 @@ expense_options = [
 
 with st.form("financial_profile_form"):
     st.header("1. Monthly finances")
+    st.caption(
+        "Use monthly take-home income after tax. Monthly expenses are "
+        "non-EMI living costs; enter loan payments separately as EMI. "
+        "Amounts must be non-negative and have at most two decimal places."
+    )
+    st.info(
+        "For each balance below, check the confirmation box only when the "
+        "amount is current. An unchecked balance is treated as unknown. "
+        "To report zero, leave the amount at ₹0 and check its box."
+    )
 
     col1, col2 = st.columns(2)
 
     with col1:
         monthly_income = st.number_input(
-            "Monthly income (₹)",
+            "Monthly take-home income (₹)",
             min_value=0.0,
             value=amount("monthly_income"),
             step=1000.0,
         )
         monthly_expenses = st.number_input(
-            "Monthly expenses (₹)",
+            "Monthly expenses, excluding EMI (₹)",
             min_value=0.0,
             value=amount("monthly_expenses"),
             step=500.0,
+            help="Recurring living and other non-loan expenses. Enter all loan repayments in the separate EMI field.",
         )
         monthly_emi = st.number_input(
-            "Monthly loan EMI (₹)",
+            "Monthly loan EMI payments (₹)",
             min_value=0.0,
             value=amount("monthly_emi"),
             step=500.0,
+        )
+        total_debt_reported = st.checkbox(
+            "I confirm my outstanding debt balance",
+            value=balance_status("total_debt"),
         )
         total_debt = st.number_input(
             "Total outstanding debt (₹)",
@@ -131,30 +151,45 @@ with st.form("financial_profile_form"):
         )
 
     with col2:
+        total_savings_reported = st.checkbox(
+            "I confirm my liquid savings balance",
+            value=balance_status("total_savings"),
+        )
         total_savings = st.number_input(
-            "Total savings (₹)",
+            "Liquid savings, including emergency fund (₹)",
             min_value=0.0,
             value=amount("total_savings"),
             step=1000.0,
+            help="Cash and cash-equivalent savings. Include the emergency fund here; do not include investments.",
+        )
+        emergency_fund_reported = st.checkbox(
+            "I confirm my emergency fund balance",
+            value=balance_status("emergency_fund"),
         )
         emergency_fund = st.number_input(
-            "Emergency fund (₹)",
+            "Emergency fund (part of liquid savings) (₹)",
             min_value=0.0,
             value=amount("emergency_fund"),
             step=1000.0,
+            help="This amount is a subset of liquid savings, not an additional balance.",
+        )
+        investments_reported = st.checkbox(
+            "I confirm my investments balance",
+            value=balance_status("investments"),
         )
         investments = st.number_input(
-            "Total investments (₹)",
+            "Investments, separate from liquid savings (₹)",
             min_value=0.0,
             value=amount("investments"),
             step=1000.0,
+            help="Report investment balances separately; do not include them in liquid savings.",
         )
         monthly_savings = st.number_input(
             "Monthly savings (₹)",
             min_value=0.0,
             value=amount("monthly_savings"),
             step=500.0,
-            help="Amount saved each month after expenses and commitments.",
+            help="Your reported amount saved monthly after non-EMI expenses and EMI. This is separate from calculated cash-flow surplus.",
         )
 
     st.divider()
@@ -298,9 +333,13 @@ if submitted:
         "monthly_expenses": monthly_expenses,
         "monthly_emi": monthly_emi,
         "total_savings": total_savings,
+        "total_savings_reported": total_savings_reported,
         "emergency_fund": emergency_fund,
+        "emergency_fund_reported": emergency_fund_reported,
         "investments": investments,
+        "investments_reported": investments_reported,
         "total_debt": total_debt,
+        "total_debt_reported": total_debt_reported,
         "age": age,
         "employment_type": employment_type,
         "employment_years": employment_years,
@@ -335,7 +374,11 @@ if submitted:
             "Select how many months away the planned expense is."
         )
 
-    if emergency_fund > total_savings:
+    if (
+        total_savings_reported
+        and emergency_fund_reported
+        and emergency_fund > total_savings
+    ):
         errors.append(
             "Emergency fund should not exceed total savings."
         )

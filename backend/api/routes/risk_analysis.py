@@ -33,7 +33,9 @@ def get_risk_analysis(
         "monthly_expenses": profile.monthly_expenses,
         "monthly_emi": profile.monthly_emi,
         "emergency_fund": profile.emergency_fund,
+        "emergency_fund_reported": profile.emergency_fund_reported,
         "total_debt": profile.total_debt,
+        "total_debt_reported": profile.total_debt_reported,
     }
 
     result = analyze_financial_risk(profile_data)

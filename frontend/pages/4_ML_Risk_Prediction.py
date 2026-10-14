@@ -107,7 +107,14 @@ financial_fields = [
 columns = st.columns(4)
 
 for index, field in enumerate(financial_fields):
-    value = profile.get(field)
+    if field in {"total_savings", "emergency_fund", "investments", "total_debt"}:
+        value = (
+            profile.get(f"reported_{field}")
+            if profile.get(f"{field}_reported", False)
+            else None
+        )
+    else:
+        value = profile.get(field)
 
     if value is None:
         display_value = "Missing"
@@ -146,11 +153,19 @@ missing_fields = [
         and field == "planned_major_expense"
     )
 ]
+unconfirmed_balances = [
+    field
+    for field in ("total_savings", "emergency_fund", "investments", "total_debt")
+    if not profile.get(f"{field}_reported", False)
+]
+missing_fields.extend(
+    f"{field} (confirm the balance)" for field in unconfirmed_balances
+)
 
 if missing_fields:
     st.warning(
-        "Your profile is incomplete. Complete these fields before "
-        "making a prediction:"
+        "Your profile is incomplete or has unconfirmed balances. "
+        "Complete or confirm these fields before making a prediction:"
     )
 
     for field in missing_fields:

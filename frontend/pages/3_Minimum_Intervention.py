@@ -54,6 +54,24 @@ except requests.RequestException:
 
 st.subheader("Define your target")
 
+provide_expense_split = st.checkbox(
+    "I want to provide an essential/discretionary expense split",
+    value=False,
+    help="Expense cuts are available only against an amount you explicitly identify as discretionary.",
+)
+if provide_expense_split:
+    saved_expenses = float(profile.get("monthly_expenses") or 0)
+    essential_expenses = st.number_input(
+        "Essential monthly expenses (₹)", min_value=0.0,
+        max_value=saved_expenses, value=0.0, step=500.0,
+        help="Enter your own estimate; FinTwin does not infer this amount.",
+    )
+    discretionary_expenses = st.number_input(
+        "Discretionary monthly expenses (₹)", min_value=0.0,
+        max_value=saved_expenses, value=0.0, step=500.0,
+        help="Enter your own estimate; FinTwin does not infer this amount.",
+    )
+
 col1, col2 = st.columns(2)
 
 with col1:
@@ -103,6 +121,14 @@ with col2:
         help="Only include a realistic, achievable increase.",
     )
 
+horizon_months = st.selectbox("Projection horizon (months)", [3, 6, 12, 24, 60], index=2)
+enforce_runway = st.checkbox("Set a minimum emergency-fund runway", value=False)
+if enforce_runway:
+    minimum_runway = st.number_input(
+        "Minimum emergency-fund runway (months)", min_value=0.0,
+        value=3.0, step=0.5,
+    )
+
 if st.button(
     "Find minimum intervention",
     type="primary",
@@ -115,7 +141,16 @@ if st.button(
         "max_expense_reduction": max_expense_reduction,
         "max_emi_reduction": max_emi_reduction,
         "max_income_increase": max_income_increase,
+        "horizon_months": horizon_months,
     }
+    if provide_expense_split:
+        if round(essential_expenses + discretionary_expenses, 2) != round(saved_expenses, 2):
+            st.error("Essential and discretionary expenses must sum to saved expenses.")
+            st.stop()
+        payload["essential_monthly_expenses"] = essential_expenses
+        payload["discretionary_monthly_expenses"] = discretionary_expenses
+    if enforce_runway:
+        payload["minimum_emergency_fund_runway_months"] = minimum_runway
 
     try:
         result_response = requests.post(
@@ -141,6 +176,10 @@ result = st.session_state.get("optimization_result")
 if result:
     st.divider()
     st.subheader("Optimization results")
+    st.metric(
+        "Baseline profile cash flow",
+        f"₹{result['baseline_outcome']['monthly_cash_flow']:,.0f}",
+    )
 
     if result["feasible"]:
         st.success("The target is achievable within the limits you entered.")
@@ -148,6 +187,15 @@ if result:
         st.warning(
             "The target is not achievable within the current limits. "
             "Consider changing the target or revisiting your assumptions."
+        )
+    runway_status = result.get("constraints_checked", {}).get(
+        "emergency_fund_runway_status"
+    )
+    if enforce_runway and runway_status != "checked":
+        st.info(
+            "The emergency-fund runway constraint is not assessed as met "
+            "because the balance is unconfirmed or projected outflow makes "
+            "runway undefined. Confirm the balance or revise the constraint."
         )
 
     c1, c2, c3 = st.columns(3)
@@ -180,6 +228,10 @@ if result:
         f"₹{result['recommended_income_increase']:,.0f}"
     )
 
+    if len(result.get("tied_minimum_options", [])) > 1:
+        st.caption("Equal-cost alternatives found (monthly amounts).")
+        st.dataframe(result["tied_minimum_options"], hide_index=True)
+
     st.metric(
         "Projected monthly cash flow after adjustments",
         f"₹{result['optimized_monthly_cash_flow']:,.0f}",
@@ -190,3 +242,11 @@ if result:
         "Validate affordability, essential spending, financing terms, "
         "and the feasibility of each adjustment before acting."
     )
+    with st.expander("Projected month-by-month comparison"):
+        st.dataframe(result.get("monthly_differences", []), hide_index=True)
+        st.write("Constraints checked")
+        st.json(result.get("constraints_checked", {}))
+        st.write("Assumptions")
+        for assumption in result.get("assumptions", []):
+            st.write(f"- {assumption}")
+        st.caption("Search and projection limitations: " + " ".join(result.get("limitations", [])))

@@ -1,13 +1,18 @@
 
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
+from backend.schemas.health import (
+    DatabaseReadinessResponse,
+    LivenessResponse,
+)
 from database.connection import engine
 
 router = APIRouter(tags=["Health"])
 
 
-@router.get("/health")
+@router.get("/health", response_model=LivenessResponse)
 def health_check():
     return {
         "status": "healthy",
@@ -15,7 +20,11 @@ def health_check():
     }
 
 
-@router.get("/health/database")
+@router.get(
+    "/health/database",
+    response_model=DatabaseReadinessResponse,
+    responses={503: {"model": DatabaseReadinessResponse}},
+)
 def database_health_check():
     try:
         with engine.connect() as connection:
@@ -26,7 +35,10 @@ def database_health_check():
             "database": "connected",
         }
     except Exception:
-        return {
-            "status": "unhealthy",
-            "database": "disconnected",
-        }
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "unhealthy",
+                "database": "disconnected",
+            },
+        )

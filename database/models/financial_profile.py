@@ -9,6 +9,7 @@ from sqlalchemy import (
     Integer,
     Numeric,
     String,
+    false,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -65,10 +66,18 @@ class FinancialProfile(Base):
         nullable=False,
     )
 
+    total_savings_reported: Mapped[bool] = mapped_column(
+        nullable=False, default=False, server_default=false()
+    )
+
     emergency_fund: Mapped[Decimal] = mapped_column(
         Numeric(14, 2),
         default=Decimal("0"),
         nullable=False,
+    )
+
+    emergency_fund_reported: Mapped[bool] = mapped_column(
+        nullable=False, default=False, server_default=false()
     )
 
     investments: Mapped[Decimal] = mapped_column(
@@ -77,10 +86,18 @@ class FinancialProfile(Base):
         nullable=False,
     )
 
+    investments_reported: Mapped[bool] = mapped_column(
+        nullable=False, default=False, server_default=false()
+    )
+
     total_debt: Mapped[Decimal] = mapped_column(
         Numeric(14, 2),
         default=Decimal("0"),
         nullable=False,
+    )
+
+    total_debt_reported: Mapped[bool] = mapped_column(
+        nullable=False, default=False, server_default=false()
     )
 
     # Extended ML profile fields

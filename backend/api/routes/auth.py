@@ -15,7 +15,7 @@ from backend.schemas.auth import (
     UserResponse,
 )
 from backend.core.config import settings
-from core.security import hash_password, verify_password
+from backend.core.security import hash_password, verify_password
 from database.models import User
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
